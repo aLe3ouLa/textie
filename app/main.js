@@ -1,6 +1,6 @@
 
 const fs = require('fs');
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, Menu } = require('electron');
 
 let mainWindow = null;
 
@@ -10,7 +10,7 @@ app.on('ready', () => {
 
     mainWindow.loadFile(`${__dirname}/index.html`);
 
-    // getFileFromUser();
+    Menu.setApplicationMenu(applicationMenu);
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
@@ -28,6 +28,9 @@ exports.getFileFromUser = () => {
             }, {
             name: 'Text files', 
             extensions: ['txt', 'text']
+        }, {
+            name: 'HTML files', 
+            extensions: ['html', 'htm']
         }]
     });
 
@@ -72,3 +75,57 @@ const openFile = (exports.openFile = file => {
     app.addRecentDocument(file);
     mainWindow.webContents.send('file-opened', file, content);
 });
+
+const template = [
+    { 
+        label: 'File', 
+        submenu: [
+           { 
+               label: 'Open file', 
+               accelerator: 'CommandOrControl+O',
+               click() {
+                   exports.getFileFromUser();
+               }
+            
+            },
+            { 
+                label: 'Save file', 
+                accelerator: 'CommandOrControl+S',
+                click() {
+                    mainWindow.webContents.send('save-markdown');
+                }
+             
+            },
+            { 
+                label: 'Save HTML', 
+                accelerator: 'CommandOrControl+Shift+S',
+                click() {
+                    mainWindow.webContents.send('save-html');
+                }
+             
+            }, 
+            {
+                label: 'Copy',
+                role: 'copy'
+            }
+        ]
+    }
+];
+
+if (process.platform === 'darwin') {
+    const applicationName = 'Textie';
+    template.unshift({
+        label: applicationName, 
+        submenu: [
+            { 
+                label : `About ${applicationName}`,
+                role: 'about'}, 
+            { 
+                label : `Quit ${applicationName}`,
+                role: 'quit'
+            }]
+    });
+}
+
+const applicationMenu = Menu.buildFromTemplate(template);
+
